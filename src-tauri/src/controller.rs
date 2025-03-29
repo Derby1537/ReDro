@@ -1,14 +1,16 @@
-use gilrs::{Gilrs, Event, Button};
+use gilrs::{Gilrs, Event};
+use std::sync::{Arc, Mutex};
 use tauri::{AppHandle, Emitter};
 
-pub fn listen_for_controllers(app: AppHandle) -> ! {
-    let mut gilrs = Gilrs::new().unwrap();
+lazy_static::lazy_static! {
+    static ref GILRS_INSTANCE: Arc<Mutex<Gilrs>> = Arc::new(Mutex::new(Gilrs::new().unwrap()));
+}
 
-    if gilrs.gamepads().count() == 0 {
-        app.emit("no_controller", ()).unwrap();
-    }
+pub fn listen_for_controllers(app: AppHandle) -> ! {
+    let gilrs = GILRS_INSTANCE.clone();
 
     loop {
+        let mut gilrs = gilrs.lock().unwrap();
         while let Some(Event { id: _, event, .. }) = gilrs.next_event() {
             if let gilrs::EventType::ButtonPressed(button, _) = event {
                 println!("Pulsante {:?} premuto", button);
@@ -21,11 +23,13 @@ pub fn listen_for_controllers(app: AppHandle) -> ! {
             }
         }
 
-        if gilrs.gamepads().count() == 0 {
-            app.emit("no_controller", ()).unwrap();
-        }
-
     }
+}
+
+#[tauri::command]
+pub fn is_controller_connected() -> bool {
+    let gilrs = GILRS_INSTANCE.lock().unwrap();
+    gilrs.gamepads().count() > 0
 }
 
 

@@ -1,51 +1,43 @@
-import { useState } from "react";
-import reactLogo from "./assets/react.svg";
+import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import "./App.css";
+import WaitingForController from "./components/WaitingForController";
+import 'bootstrap/dist/css/bootstrap.min.css';
+import ControllerView from "./components/ControllerView";
 
 function App() {
-  const [greetMsg, setGreetMsg] = useState("");
-  const [name, setName] = useState("");
+    const [controllerConnected, setControllerConnected] = useState("");
 
-  async function greet() {
-    // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-    setGreetMsg(await invoke("greet", { name }));
-  }
+    const checkControllerState = async () => {
+        try {
+            const newState = await invoke("is_controller_connected");
+            setControllerConnected(newState);
+        }
+        catch (error) {
+            console.error(error);
+        }
+    }
 
-  return (
-    <main className="container">
-      <h1>Welcome to Tauri + React</h1>
+    useEffect(() => {
+        checkControllerState();
+        
+        const interval = setInterval(() => {
+            checkControllerState();
+        }, 2000);
 
-      <div className="row">
-        <a href="https://vitejs.dev" target="_blank">
-          <img src="/vite.svg" className="logo vite" alt="Vite logo" />
-        </a>
-        <a href="https://tauri.app" target="_blank">
-          <img src="/tauri.svg" className="logo tauri" alt="Tauri logo" />
-        </a>
-        <a href="https://reactjs.org" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <p>Click on the Tauri, Vite, and React logos to learn more.</p>
+        return () => clearInterval(interval);
+    }, []);
 
-      <form
-        className="row"
-        onSubmit={(e) => {
-          e.preventDefault();
-          greet();
-        }}
-      >
-        <input
-          id="greet-input"
-          onChange={(e) => setName(e.currentTarget.value)}
-          placeholder="Enter a name..."
-        />
-        <button type="submit">Greet</button>
-      </form>
-      <p>{greetMsg}</p>
-    </main>
-  );
+
+    return (
+        <main className="d-flex justify-content-center align-items-center h-100">
+            {controllerConnected ? (
+                <ControllerView/>
+            ) : (
+                <WaitingForController/>
+                )}
+        </main>
+    );
 }
 
 export default App;
