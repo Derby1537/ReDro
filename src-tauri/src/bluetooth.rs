@@ -11,6 +11,18 @@ pub(crate) struct Drone {
     name: String,
 }
 
+async fn is_peripheral_drone(peripheral: &btleplug::platform::Peripheral) -> Option<Drone> {
+    if let Some(properties) = peripheral.properties().await.unwrap() {
+        let name = properties.local_name.unwrap_or_else(|| "".to_string());
+        let id = peripheral.id().to_string();
+
+        if name.starts_with("DRN") {
+            return Some(Drone { id, name });
+        }
+    }
+    None
+}
+
 #[command]
 pub async fn get_drones() -> Vec<Drone> {
     let manager = Manager::new().await.unwrap();
@@ -29,14 +41,8 @@ pub async fn get_drones() -> Vec<Drone> {
 
     let mut drones = Vec::new();
     for peripheral in peripherals {
-        if let Some(properties) = peripheral.properties().await.unwrap() {
-            let name = properties.local_name.unwrap_or_else(|| "".to_string());
-            let id = peripheral.id().to_string();
-            println!("Dispositivo {:?} con nome {:?}", id, name);
-
-            if name.starts_with("DRN") {
-                drones.push(Drone { id, name });
-            }
+        if let Some(drone) = is_peripheral_drone(&peripheral).await {
+            drones.push(drone);
         }
     }
 
@@ -54,6 +60,12 @@ pub async fn is_drone_connected() -> bool {
     }
 
     let central = adapters[0].clone();
-    //let peripherals = central.periph
+    let peripherals = central.peripherals().await.unwrap();
+
+    for peripheral in peripherals {
+        if peripheral.is_connected().await.unwrap() && is_peripheral_drone(&peripheral).await.is_some() {
+            return true;
+        }
+    }
     false
 }
