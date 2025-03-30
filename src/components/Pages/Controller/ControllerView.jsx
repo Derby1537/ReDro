@@ -1,9 +1,32 @@
 import React, { useEffect, useState } from "react";
-import controller from "../assets/controller.png";
-import './../components/controller.css';
+import controller from "../../../assets/controller.png";
+import './controller.css';
 import { listen } from "@tauri-apps/api/event";
+import { invoke } from "@tauri-apps/api/core";
 
 const ControllerView = () => {
+    const [controllerConnected, setControllerConnected] = useState("");
+
+    const checkControllerState = async () => {
+        try {
+            const newState = await invoke("is_controller_connected");
+            setControllerConnected(newState);
+        }
+        catch (error) {
+            console.error(error);
+        }
+    }
+
+    useEffect(() => {
+        checkControllerState();
+        
+        const interval = setInterval(() => {
+            checkControllerState();
+        }, 2000);
+
+        return () => clearInterval(interval);
+    }, []);
+
     const [pressedButtons, setPressedButtons] = useState([]);
 
     useEffect(() => {
