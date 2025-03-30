@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import controller from "../../../assets/controller.png";
+import controller from "../../assets/controller.png";
 import './controller.css';
 import { listen } from "@tauri-apps/api/event";
 import { invoke } from "@tauri-apps/api/core";
