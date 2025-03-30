@@ -2,38 +2,34 @@ import React, { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { Button, Spinner } from "react-bootstrap";
 import magGlass from "../../assets/mag_glass.svg";
+import { useDrone } from '../../Contexts/DroneContext';
 import './droneView.css';
 
 const DroneView = () => {
-    const [droneConnected, setDroneConnected] = useState(false);
+    const { droneConnected } = useDrone();
     const [availableDrones, setAvaiableDrones] = useState([]);
     const [loading, setLoading] = useState(false);
 
     const checkDroneConnection = async () => {
         try {
-            setLoading(true);
-            const isConnected = await invoke("is_drone_connected");
-            setDroneConnected(isConnected);
-
-            if(isConnected) {
-                setLoading(false);
+            if(droneConnected) {
                 return;
             }
 
-            if(!isConnected) {
-                const drones = await invoke("get_drones");
-                setLoading(false);
-                console.log(drones);
-                setAvaiableDrones(drones);
-            }
+            setLoading(true);
+            const drones = await invoke("get_drones");
+            setLoading(false);
+            setAvaiableDrones(drones);
         }
         catch (error) {
             console.error(error);
         }
     }
     useEffect(() => {
-        checkDroneConnection();
-    }, []);
+        if(!droneConnected) {
+            checkDroneConnection();
+        }
+    }, [droneConnected]);
     return (
         <div className="text-white p-2">
             {droneConnected ? (

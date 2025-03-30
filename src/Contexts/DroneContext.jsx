@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import React, { createContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useEffect, useState } from "react";
 
 const DroneContext = createContext();
 
@@ -28,3 +28,5 @@ export const DroneProvider = ({ children }) => {
     </DroneContext.Provider>
     )
 }
+
+export const useDrone = () => useContext(DroneContext);
